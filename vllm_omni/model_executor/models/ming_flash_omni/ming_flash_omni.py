@@ -137,6 +137,13 @@ class MingFlashOmniForConditionalGeneration(
                 f"For the talker stage, use MingFlashOmniTalkerForConditionalGeneration directly."
             )
 
+
+    def get_language_model(self) -> "nn.Module":
+        """Return the language model for upstream MoE detection."""
+        if hasattr(self.model, "get_language_model"):
+            return self.model.get_language_model()
+        return self.model
+
     def forward(
         self,
         input_ids: torch.Tensor,
