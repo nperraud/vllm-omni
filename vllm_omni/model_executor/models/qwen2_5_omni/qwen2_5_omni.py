@@ -87,6 +87,7 @@ class Qwen2_5OmniForConditionalGeneration(
                 architectures=["Qwen2_5OmniThinkerModel"],
             )
             self.model = self.thinker
+            self._mark_language_model(self.thinker)  # required by upstream SupportsMoE
             self.talker = None
             self.token2wav = None
 
@@ -105,6 +106,7 @@ class Qwen2_5OmniForConditionalGeneration(
                 architectures=["Qwen2_5OmniTalkerModel"],
             )
             self.model = self.talker
+            self._mark_language_model(self.talker)  # required by upstream SupportsMoE
             self.token2wav = None
             # set suppress start id according to token2wav
             t2w_token_end_id = getattr(
