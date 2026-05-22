@@ -91,6 +91,11 @@ class StageEngineCoreProc(EngineCoreProc):
             stage_label = f"stage{omni_stage_id}" if omni_stage_id is not None else "noid"
             set_process_title(f"StageEngineCoreProc_{stage_label}_replica{omni_replica_id}_DP{dp_rank}")
             decorate_logs()
+            # Workaround for flashinfer/jit-cache version mismatch in CI.
+            # The parent process handles this gracefully via ring_globals.py,
+            # but the subprocess hits an unprotected import in TopKTopPSampler.
+            # Setting this env var allows the same graceful fallback to work.
+            os.environ.setdefault("FLASHINFER_DISABLE_VERSION_CHECK", "1")
             os.environ["VLLM_OMNI_REPLICA_ID"] = str(max(int(omni_replica_id), 0))
 
             engine_core = StageEngineCoreProc(
