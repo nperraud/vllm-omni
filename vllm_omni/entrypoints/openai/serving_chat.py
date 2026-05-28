@@ -2554,6 +2554,7 @@ class OmniOpenAIServingChat(OpenAIServingChat, AudioMixin):
         output_format: str = "png",
         output_compression: int = 100,
         size: str = "auto",
+        raw_request: Request | None = None,
     ) -> tuple[list[Image.Image], dict[str, Any], float, str | None] | ErrorResponse | AsyncIterator[str]:
         """Generate diffusion images and return raw images plus generation stats."""
         if request_id is None:
@@ -2615,6 +2616,7 @@ class OmniOpenAIServingChat(OpenAIServingChat, AudioMixin):
                     output_format=output_format,
                     output_compression=output_compression,
                     size=size,
+                    raw_request=raw_request,
                 )
 
             result = None
@@ -2659,6 +2661,7 @@ class OmniOpenAIServingChat(OpenAIServingChat, AudioMixin):
         output_format: str,
         output_compression: int,
         size: str,
+        raw_request: Request | None = None,
     ) -> AsyncIterator[str]:
         """Yield image edit SSE chunks from multi-stage diffusion outputs."""
         created = int(time.time())
@@ -2710,7 +2713,16 @@ class OmniOpenAIServingChat(OpenAIServingChat, AudioMixin):
             logger.error("EngineDeadError during streaming image edit: %s", exc)
             data = self.create_streaming_error_response(exc)
             yield f"data: {data}\n\n"
-            terminate_if_errored(engine=self.engine_client)
+            if raw_request is not None:
+                terminate_if_errored(
+                    server=raw_request.app.state.server,
+                    engine=self.engine_client,
+                )
+            else:
+                logger.warning(
+                    "[OmniOpenAIServingChat] Engine dead during streaming image edit, "
+                    "but cannot terminate server (no raw_request context)."
+                )
         except Exception as exc:
             logger.exception("Streaming image edit failed: %s", exc)
             chunk = ImageEditStreamError(
